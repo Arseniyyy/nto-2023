@@ -19,7 +19,7 @@ navigate = rospy.ServiceProxy('navigate', srv.Navigate)
 set_effect = rospy.ServiceProxy('led/set_effect', SetLEDEffect)
 land = rospy.ServiceProxy('land', Trigger)
 
-def navigate_wait(x=0, y=0, z=1, yaw=float('nan'), speed=0.3, frame_id='map', auto_arm=False, tolerance=0.2):
+def navigate_wait(x=0, y=0, z=1, yaw=float('nan'), speed=0.7, frame_id='map', auto_arm=False, tolerance=0.2):
     navigate(x=x, y=y, z=z, yaw=yaw, speed=speed, frame_id=frame_id, auto_arm=auto_arm)
 
     while not rospy.is_shutdown():
@@ -60,10 +60,14 @@ def image_callback(data):
     sorted_contours = sorted(contours, key=cv2.contourArea, reverse=False)
 
     try:
-        M = cv2.moments(sorted_contours[0])
-        x, y, w, h= cv2.boundingRect(sorted_contours[0])
+        # M = cv2.moments(sorted_contours[0])
+        x, y, w, h = cv2.boundingRect(sorted_contours[0])
         x_center = x + w / 2
         y_center = y + w / 2
+
+        if 200 < x_center < 215 and 100 < y_center < 160:
+            telem = get_telemetry(frame_id='aruco_map')
+            print('fire detected', telem.x, telem.y)
 
         print(x_center, y_center)
     except:
@@ -82,5 +86,9 @@ subscriber = rospy.Subscriber('main_camera/image_raw', Image, image_callback, qu
 navigate_wait(frame_id='body', auto_arm=True)
 navigate_wait(0, 1, 1, frame_id='aruco_map')
 navigate_wait(0, 3, 1, frame_id='aruco_map')
+navigate_wait(1, 3, 1, frame_id='aruco_map')
+navigate_wait(1, 4, 1, frame_id='aruco_map')
+navigate_wait(4, 4, 1, frame_id='aruco_map')
+navigate_wait(4, 2, 1, frame_id='aruco_map')
 
 land_wait()

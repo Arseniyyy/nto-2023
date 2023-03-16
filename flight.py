@@ -29,6 +29,7 @@ def navigate_wait(x=0, y=0, z=0.5, yaw=float('nan'), speed=0.7, frame_id='map', 
         rospy.sleep(0.2)
 
 def land_wait():
+    """"""
     land()
     while get_telemetry().armed:
         rospy.sleep(0.2)

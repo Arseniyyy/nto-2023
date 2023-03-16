@@ -19,7 +19,7 @@ navigate = rospy.ServiceProxy('navigate', srv.Navigate)
 set_effect = rospy.ServiceProxy('led/set_effect', SetLEDEffect)
 land = rospy.ServiceProxy('land', Trigger)
 
-def navigate_wait(x=0, y=0, z=1, yaw=float('nan'), speed=0.7, frame_id='map', auto_arm=False, tolerance=0.2):
+def navigate_wait(x=0, y=0, z=0.5, yaw=float('nan'), speed=0.7, frame_id='map', auto_arm=False, tolerance=0.2):
     navigate(x=x, y=y, z=z, yaw=yaw, speed=speed, frame_id=frame_id, auto_arm=auto_arm)
 
     while not rospy.is_shutdown():
@@ -39,10 +39,23 @@ def range_callback(msg):
     global dist
     dist = msg.range
 
+def fly():
+    navigate_wait(frame_id='body', auto_arm=True)
+    telemetry = get_telemetry(frame_id='aruco_map')
+
+    navigate_wait(x=0, y=4, frame_id='aruco_map')
+    navigate_wait(x=1, y=3, frame_id='aruco_map')
+    navigate_wait(telemetry.x, telemetry.y, frame_id='aruco_map')
+
+def takeoff_liftoff():
+    navigate_wait(frame_id='body', auto_arm=True)
+    telemetry = get_telemetry(frame_id='aruco_map')
+    navigate_wait(telemetry.x, telemetry.y, frame_id='aruco_map')
+
 def image_callback(data):
     img = cv2.resize(bridge.imgmsg_to_cv2(data, 'bgr8'), (320, 240))
-    gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
-    edges= cv2.Canny(gray, 50, 200)
+    # gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+    # edges= cv2.Canny(gray, 50, 200)
 
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
@@ -69,26 +82,19 @@ def image_callback(data):
             telem = get_telemetry(frame_id='aruco_map')
             print('fire detected', telem.x, telem.y)
 
-        print(x_center, y_center)
+        # print(x_center, y_center)
     except:
         pass
 
 
-    cv2.drawContours(img, contours, -1, (0, 0, 255), 3)
-    cv2.imshow('img', img)
-    if cv2.waitKey(1) == ord('q'):
-        exit()
+    # cv2.drawContours(img, contours, -1, (0, 0, 255), 3)
+    # if cv2.waitKey(1) == ord('q'):
+    #     exit()
 
 rospy.Subscriber('rangefinder/range', Range, range_callback)
 
-subscriber = rospy.Subscriber('main_camera/image_raw', Image, image_callback, queue_size=1)
+rospy.Subscriber('main_camera/image_raw', Image, image_callback, queue_size=1)
 
-navigate_wait(frame_id='body', auto_arm=True)
-navigate_wait(0, 1, 1, frame_id='aruco_map')
-navigate_wait(0, 3, 1, frame_id='aruco_map')
-navigate_wait(1, 3, 1, frame_id='aruco_map')
-navigate_wait(1, 4, 1, frame_id='aruco_map')
-navigate_wait(4, 4, 1, frame_id='aruco_map')
-navigate_wait(4, 2, 1, frame_id='aruco_map')
+takeoff_liftoff()
 
 land_wait()

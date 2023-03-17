@@ -27,10 +27,17 @@ def navigate_wait(x=0, y=0, z=0, yaw=float('nan'), speed=0.5, frame_id='', auto_
             break
         rospy.sleep(0.2)
 
-navigate_wait(z=0.5, frame_id='body', auto_arm=True)
-navigate_wait(x=0, y=1, z=0.5, speed=0.8, yaw=3.14159)
-#navigate_wait(x=1.5, y=1.3, z=1.25, frame_id='aruco_map')
-navigate_wait(x=0, y=4, z=0.5, speed=0.8, yaw=3.14159)
+
+def land_wait():
+    land()
+    while get_telemetry().armed:
+        rospy.sleep(0.2)
+
+
+navigate_wait(z=1.25, frame_id='body', auto_arm=True)
+navigate_wait(x=0, y=1, z=1.25, speed=0.8, yaw=3.14159)
+#navigate_wait(x=1.5, y=0.5, z=1.25, frame_id='aruco_map')
+navigate_wait(x=0, y=4, z=1.25, speed=0.8, yaw=3.14159)
 
 
 #1-2 стены
@@ -85,8 +92,6 @@ rast1 = get_telemetry(frame_id='aruco_map').x
 wall9 = rast1 - rast
 wall10 = b - a
 
-navigate_wait(x=0, y=4, z=0.5, frame_id='aruco_map')
-
 print('Wall 1:', round(wall1))
 print('Wall 2:', round(wall2))
 print('Wall 3:', round(wall3))
@@ -97,3 +102,8 @@ print('Wall 7:', round(wall7))
 print('Wall 8:', round(wall8))
 print('Wall 9:', round(wall9))
 print('Wall 10:', round(wall10))
+
+navigate_wait(x=0, y=4, z=1.25, frame_id='aruco_map')
+navigate_wait(x=0, y=1, z=1, frame_id='aruco_map')
+navigate_wait(x=1.5, y=0.5, z=1, frame_id='aruco_map')
+land_wait()

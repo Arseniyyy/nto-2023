@@ -19,7 +19,7 @@ navigate = rospy.ServiceProxy('navigate', srv.Navigate)
 set_effect = rospy.ServiceProxy('led/set_effect', SetLEDEffect)
 land = rospy.ServiceProxy('land', Trigger)
 
-def navigate_wait(x=0, y=0, z=0.5, yaw=float('nan'), speed=0.7, frame_id='map', auto_arm=False, tolerance=0.2):
+def navigate_wait(x=0, y=0, z=0.5, yaw=float('nan'), speed=0.4, frame_id='map', auto_arm=False, tolerance=0.2):
     navigate(x=x, y=y, z=z, yaw=yaw, speed=speed, frame_id=frame_id, auto_arm=auto_arm)
 
     while not rospy.is_shutdown():
@@ -29,16 +29,10 @@ def navigate_wait(x=0, y=0, z=0.5, yaw=float('nan'), speed=0.7, frame_id='map', 
         rospy.sleep(0.2)
 
 def land_wait():
-    """"""
     land()
     while get_telemetry().armed:
         rospy.sleep(0.2)
 
-
-dist = 0  # range
-def range_callback(msg):
-    global dist
-    dist = msg.range
 
 def fly():
     navigate_wait(frame_id='body', auto_arm=True)
@@ -48,12 +42,35 @@ def fly():
     navigate_wait(x=1, y=3, frame_id='aruco_map')
     navigate_wait(telemetry.x, telemetry.y, frame_id='aruco_map')
 
+
 def takeoff_liftoff():
     navigate_wait(frame_id='body', auto_arm=True)
     telemetry = get_telemetry(frame_id='aruco_map')
     navigate_wait(telemetry.x, telemetry.y, frame_id='aruco_map')
 
+
+def fly_to_upper_right_corner():
+    """Функция полёта в правый верхний угол карты. Используется для тестирования полёта коптера по аруко-маркерам"""
+    navigate_wait(frame_id='body', auto_arm=True)
+    telemetry = get_telemetry(frame_id='aruco_map')
+
+    navigate_wait(x=0, y=1, frame_id='aruco_map')
+    navigate_wait(x=0, y=3, frame_id='aruco_map')
+    navigate_wait(x=1, y=3, frame_id='aruco_map')
+    navigate_wait(x=1, y=4, frame_id='aruco_map')
+    navigate_wait(x=4, y=4, frame_id='aruco_map')
+    navigate_wait(x=4, y=4, frame_id='aruco_map')
+    navigate_wait(x=4, y=1, frame_id='aruco_map')
+    navigate_wait(x=4, y=4, frame_id='aruco_map')
+    navigate_wait(x=7, y=4, frame_id='aruco_map')
+
+    navigate_wait(x=0, y=4, frame_id='aruco_map')
+    navigate_wait(x=0, y=1, frame_id='aruco_map')
+    navigate_wait(x=telemetry.x, y=telemetry.y, frame_id='aruco_map')
+
+
 def image_callback(data):
+    """Функция распознавания пожаров"""
     img = cv2.resize(bridge.imgmsg_to_cv2(data, 'bgr8'), (320, 240))
     # gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
     # edges= cv2.Canny(gray, 50, 200)
@@ -92,10 +109,10 @@ def image_callback(data):
     # if cv2.waitKey(1) == ord('q'):
     #     exit()
 
-rospy.Subscriber('rangefinder/range', Range, range_callback)
+# rospy.Subscriber('rangefinder/range', Range, range_callback)  # подписка на топик с дальномером
 
-rospy.Subscriber('main_camera/image_raw', Image, image_callback, queue_size=1)
+rospy.Subscriber('main_camera/image_raw_throttled', Image, image_callback, queue_size=1)  
 
-takeoff_liftoff()
+fly_to_upper_right_corner()
 
 land_wait()
